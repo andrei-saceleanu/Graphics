@@ -37,9 +37,12 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
      protected:
-        ray::Camera* camera;
+        ray::Camera* camera,*camera2;
         glm::mat4 projectionMatrix;
         glm::vec3 p;
+        glm::vec2 mouse;
+        glm::vec3 f, r, u;
+        float z;
         
 
         float right;

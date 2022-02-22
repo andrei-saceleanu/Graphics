@@ -39,6 +39,15 @@ void RayMarch::Init()
 
     camera = new ray::Camera();
     camera->Set(glm::vec3(0, 0, 3), glm::vec3(0), glm::vec3(0, 1, 0));
+
+    camera2 = new ray::Camera();
+    camera2->Set(glm::vec3(0, 1, 0), glm::vec3(0,1,-1), glm::vec3(0, 1, 0));
+
+    f = camera->forward;
+    r = camera->right;
+    u = camera->up;
+    z = camera->distanceToTarget;
+
     
 	Mesh* mesh = new Mesh("box");
 	mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
@@ -141,7 +150,16 @@ void RayMarch::RenderSimpleMeshGeneral(Mesh* mesh, Shader* shader, const glm::ma
     glm::vec2 res = window->GetResolution();
     glUniform2fv(glGetUniformLocation(shader->GetProgramID(), "res"),1,glm::value_ptr(res));
 
-    glUniform3fv(glGetUniformLocation(shader->GetProgramID(),"cameraPos"),1,glm::value_ptr(p));
+    glm::vec3 x = camera2->position;
+    glUniform3fv(glGetUniformLocation(shader->GetProgramID(),"cameraPos"),1,glm::value_ptr(x));
+
+    glUniform2fv(glGetUniformLocation(shader->GetProgramID(), "mouse"), 1, glm::value_ptr(mouse));
+
+    glUniform3fv(glGetUniformLocation(shader->GetProgramID(), "f"), 1, glm::value_ptr(f));
+    glUniform3fv(glGetUniformLocation(shader->GetProgramID(), "r"), 1, glm::value_ptr(r));
+    glUniform3fv(glGetUniformLocation(shader->GetProgramID(), "u"), 1, glm::value_ptr(u));
+    glUniform1f(glGetUniformLocation(shader->GetProgramID(), "z"), z);
+
 
     // Draw the object
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
@@ -185,22 +203,28 @@ void RayMarch::OnInputUpdate(float deltaTime, int mods)
     {
 		//camera->MoveForward(deltaTime * cameraSpeed);
         p -= deltaTime * cameraSpeed * dir;
+        camera2->MoveForward(-deltaTime * cameraSpeed);
         
 	}
 	if (window->KeyHold(GLFW_KEY_A))
 	{
 		//camera->TranslateRight(-deltaTime * cameraSpeed);
         p -= deltaTime * cameraSpeed * camera->right;
+        camera2->TranslateRight(-deltaTime * cameraSpeed);
 	}
 	if (window->KeyHold(GLFW_KEY_S))
 	{
 		//camera->MoveForward(-deltaTime * cameraSpeed);
         p += deltaTime * cameraSpeed * dir;
+        camera2->MoveForward(deltaTime * cameraSpeed);
+
 	}
 	if (window->KeyHold(GLFW_KEY_D))
 	{
 		//camera->TranslateRight(deltaTime * cameraSpeed);
         p += deltaTime * cameraSpeed * camera->right;
+        camera2->TranslateRight(deltaTime * cameraSpeed);
+
 	}
 }
 
@@ -225,12 +249,22 @@ void RayMarch::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
     {
         float sensivityOX = 0.001f;
         float sensivityOY = 0.001f;
+        mouse = glm::vec2(mouseX, mouseY);
 
-            
+        camera2->RotateFirstPerson_OX(sensivityOX * -deltaY);
+        camera2->RotateFirstPerson_OY(sensivityOY * -deltaX);
         camera->RotateThirdPerson_OX(sensivityOX * -deltaY);
         camera->RotateThirdPerson_OY(sensivityOY * -deltaX);
         
-        
+        /*p = camera->position;
+        f = camera->forward;
+        r = camera->right;
+        u = camera->up;
+        z = camera->distanceToTarget;
+        */
+        camera->RotateThirdPerson_OY(sensivityOY * deltaX);
+        camera->RotateThirdPerson_OX(sensivityOX * deltaY);
+
     }
 }
 
