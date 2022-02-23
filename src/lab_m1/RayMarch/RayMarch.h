@@ -39,10 +39,7 @@ namespace m1
      protected:
         ray::Camera* camera,*camera2;
         glm::mat4 projectionMatrix;
-        glm::vec3 p;
-        glm::vec2 mouse;
         glm::vec3 f, r, u;
-        float z;
         
 
         float right;

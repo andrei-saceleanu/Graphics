@@ -2,6 +2,7 @@
 #define MAX_STEPS 100
 #define MAX_DIST 100.f
 #define SURF_DIST .01f
+const float PI = 3.14159265359;
 
 // Input
 in vec3 color;
@@ -9,12 +10,16 @@ in vec3 color;
 uniform vec2 res;
 uniform float iTime;
 uniform vec3 cameraPos;
-uniform vec2 mouse;
 uniform vec3 f,r,u;
-uniform float z;
+
 // Output
 layout(location = 0) out vec4 out_color;
 
+
+mat2 rotate2d(float theta) {
+  float s = sin(theta), c = cos(theta);
+  return mat2(c, -s, s, c);
+}
 
 // Rotation matrix around the X axis.
 mat3 rotateX(float theta) {
@@ -110,11 +115,13 @@ float GetLight(vec3 p) {
 
 
 
-vec3 R(vec2 uv, vec3 p) {
-    vec3 c = p+f*z,
-        i = c + uv.x*r + uv.y*u,
-        d = normalize(i-p);
-    return d;
+
+
+mat3 camera(vec3 cameraPos,vec3 lp){
+    vec3 cd = normalize(lp-cameraPos);
+    vec3 cr = normalize(cross(vec3(0,1,0),cd));
+    vec3 cu = normalize(cross(cd,cr));
+    return mat3(-cr,cu,-cd);
 }
 
 
@@ -123,18 +130,16 @@ void main()
 {
     vec2 uv = (gl_FragCoord.xy-0.5f*res)/res.y;
     vec3 col = vec3(0);
-    vec2 m = mouse.xy / res.xy - 0.5;
     
-    vec3 c=cameraPos;
     
-    //vec3 rd = R(uv, c);
-    vec3 rd = vec3(uv.x,uv.y,1);
-    rd *= rotateY(m.x) * rotateX(m.y);
+    vec3 ro = cameraPos;
+    vec3 rd = mat3(-r,u,-f)*normalize(vec3(uv,1));
+    
 
 
 
-    float d = RayMarch(c, rd);
-    vec3 p = c + rd * d;
+    float d = RayMarch(ro, rd);
+    vec3 p = ro + rd * d;
     
     float dif = GetLight(p);
     col = vec3(dif);
