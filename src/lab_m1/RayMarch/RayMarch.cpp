@@ -41,7 +41,7 @@ void RayMarch::Init()
     camera->Set(glm::vec3(0, 0, 3), glm::vec3(0), glm::vec3(0, 1, 0));
 
     camera2 = new ray::Camera();
-    camera2->Set(glm::vec3(0, 1, 0), glm::vec3(0,1,-1), glm::vec3(0, 1, 0));
+    camera2->Set(glm::vec3(0, 0, 5), glm::vec3(0), glm::vec3(0, 1, 0));
 
     f = camera2->forward;
     r = camera2->right;
@@ -75,7 +75,6 @@ void RayMarch::Init()
     
 
 
-    projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, Z_NEAR, Z_FAR);
     projectionMatrix = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, Z_NEAR, Z_FAR);
 
 }
@@ -96,6 +95,7 @@ void RayMarch::Update(float deltaTimeSeconds)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glm::ivec2 resolution = window->GetResolution();
     // Sets the screen area where to draw
+    
     glViewport(0, 0, resolution.x, resolution.y);
     glm::mat4 modelMatrix = glm::mat4(1);
     modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0));
@@ -108,7 +108,6 @@ void RayMarch::Update(float deltaTimeSeconds)
 
 void RayMarch::FrameEnd()
 {
-    //DrawCoordinateSystem(camera->GetViewMatrix(), projectionMatrix);
 }
 
 
@@ -194,28 +193,33 @@ void RayMarch::OnInputUpdate(float deltaTime, int mods)
     // move the camera only if MOUSE_RIGHT button is pressed
     
 	float cameraSpeed = 3.0f;
-    glm::vec3 dir = glm::normalize(glm::vec3(camera->forward.x, 0, camera->forward.z));
+    glm::vec3 dir = glm::normalize(glm::vec3(0, camera->up.y, 0));
 
 
 	if (window->KeyHold(GLFW_KEY_W)) 
     {
-		camera2->MoveForward(-deltaTime * cameraSpeed);
-        
+		camera2->MoveForward(deltaTime * cameraSpeed);  
 	}
 	if (window->KeyHold(GLFW_KEY_A))
 	{
-		camera2->TranslateRight(deltaTime * cameraSpeed);
+		camera2->TranslateRight(-deltaTime * cameraSpeed);
 	}
 	if (window->KeyHold(GLFW_KEY_S))
 	{
-		camera2->MoveForward(deltaTime * cameraSpeed);
-
+		camera2->MoveForward(-deltaTime * cameraSpeed);
 	}
 	if (window->KeyHold(GLFW_KEY_D))
 	{
-		camera2->TranslateRight(-deltaTime * cameraSpeed);
-
+		camera2->TranslateRight(deltaTime * cameraSpeed);
 	}
+    if (window->KeyHold(GLFW_KEY_Q))
+    {
+        camera2->position += deltaTime * cameraSpeed * dir;
+    }
+    if (window->KeyHold(GLFW_KEY_E))
+    {
+        camera2->position -= deltaTime * cameraSpeed * dir;
+    }
 }
 
 
@@ -240,7 +244,7 @@ void RayMarch::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
         float sensivityOX = 0.001f;
         float sensivityOY = 0.001f;
 
-        camera2->RotateFirstPerson_OX(sensivityOX * deltaY);
+        camera2->RotateFirstPerson_OX(sensivityOX * -deltaY);
         camera2->RotateFirstPerson_OY(sensivityOY * -deltaX);
         
         f = camera2->forward;

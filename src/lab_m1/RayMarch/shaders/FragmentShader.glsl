@@ -63,13 +63,32 @@ mat3 identity() {
     );
 }
 
+float sdSphere(vec3 p,vec3 center,float radius){
+    return length(p-center)-radius;
+}
+
+float sdGyroid(vec3 p){
+    p.xz *= rotate2d(iTime*0.3);
+    p *= 10.;
+    float res = abs(0.7*dot(sin(p),cos(p.yzx))/10.)-0.03;
+    return res;
+}
+
+float smin( float a, float b, float k ) {
+    float h = clamp( 0.5+0.5*(b-a)/k, 0., 1. );
+    return mix( b, a, h ) - k*h*(1.0-h);
+}
+
+
 float GetDist(vec3 p) {
-	vec4 s = vec4(0, 1, 6, 1);
+
+    float sphere =  abs(sdSphere(p,vec3(0),1.))-0.05;
+    float gyroid = sdGyroid(p);
+    float x = smin(sphere,gyroid,-0.03);
+    float plane = p.y + 1.;
     
-    float sphereDist =  length(p-s.xyz)-s.w;
-    float planeDist = p.y;
-    
-    float d = min(sphereDist, planeDist);
+    float d = min(x, plane);
+    d = min(d,sdSphere(p,vec3(3,0.5,0),0.1));
     return d;
 }
 
@@ -100,15 +119,13 @@ vec3 GetNormal(vec3 p) {
 
 
 
-float GetLight(vec3 p) {
-    vec3 lightPos = vec3(0, 5, 6);
-    lightPos.xz += vec2(sin(iTime), cos(iTime))*2.;
+vec3 GetLight(vec3 p,vec3 lightPos,vec3 lightColor) {
     vec3 l = normalize(lightPos-p);
     vec3 n = GetNormal(p);
     
-    float dif = clamp(dot(n, l), 0., 1.);
-    float d = RayMarch(p+n*SURF_DIST*2., l);
-    if(d<length(lightPos-p)) dif *= .1;
+    vec3 dif = clamp(dot(n, l), 0., 1.)*lightColor;
+    //float d = RayMarch(p+n*SURF_DIST*2., l);
+    //if(d<length(lightPos-p)) dif *= .1;
     
     return dif;
 }
@@ -133,17 +150,29 @@ void main()
     
     
     vec3 ro = cameraPos;
-    vec3 rd = mat3(-r,u,-f)*normalize(vec3(uv,1));
+    vec3 rd = mat3(r,u,f)*normalize(vec3(uv,1));
     
-
-
 
     float d = RayMarch(ro, rd);
     vec3 p = ro + rd * d;
     
-    float dif = GetLight(p);
-    col = vec3(dif);
-    
+
+    if(d<MAX_DIST){
+        vec3 dif = GetLight(p,vec3(0),vec3(1.));
+        dif += GetLight(p,vec3(3,0.5,0),vec3(1,0,0));
+        col = dif;
+
+        float cd = length(p);
+        if(cd > 1.03){
+            float s = sdGyroid(normalize(p));
+            float w = cd *0.02;
+            float shadow = smoothstep(-w,w,s);
+            col *= shadow;
+
+            col /= cd*cd;
+
+        }
+    }    
     col = pow(col, vec3(.4545));
 
     out_color = vec4(col,1.0);
