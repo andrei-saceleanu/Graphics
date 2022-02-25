@@ -131,6 +131,32 @@ vec3 GetLight(vec3 p,vec3 lightPos,vec3 lightColor) {
 }
 
 
+float shadow( in vec3 ro, in vec3 rd, float mint, float maxt )
+{
+    for( float t=mint; t<maxt; )
+    {
+        float h = GetDist(ro + rd*t);
+        if( h<0.001 )
+            return 0.0;
+        t += h;
+    }
+    return 1.0;
+}
+
+float softshadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k )
+{
+    float res = 1.0;
+    for( float t=mint; t<maxt; )
+    {
+        float h = GetDist(ro + rd*t);
+        if( h<0.001 )
+            return 0.0;
+        res = min( res, k*h/t );
+        t += h;
+    }
+    return res;
+}
+
 
 
 
@@ -172,7 +198,10 @@ void main()
             col /= cd*cd;
 
         }
-    }    
+    }
+    /*float sh = clamp(dot(-normalize(p),GetNormal(p)),0.,1.)*softshadow(p,-normalize(p),0.01,3.,2);
+    col = 2*vec3(sh);
+    */
     col = pow(col, vec3(.4545));
 
     out_color = vec4(col,1.0);
